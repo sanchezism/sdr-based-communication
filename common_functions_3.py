@@ -1,8 +1,42 @@
 #!/usr/bin/python3
 
+
 import numpy as np
 import matplotlib.pyplot as plt
 import adi
+
+def main():
+    
+    # Create a message signal that can be transmitted
+    char = "Hello"
+
+    # Set the center freq and sample rate
+    sample_rate = 1e6 #Hz
+    center_freq = 915e6 #Hz
+
+    baseband = qpsk_modulate_text(char)
+    num_symbols = len(baseband)
+    t = np.arange(num_symbols) / sample_rate
+
+    # Configure the PlutoSDR
+    sdr = adi.Pluto("ip:192.168.2.1")
+    sdr.sample_rate = int(sample_rate)
+    sdr.tx_rf_bandwidth = int(sample_rate)
+    sdr.tx_lo = int(center_freq)
+    sdr.tx_hardwaregain_chan0 = -50
+
+    # Modulate the signal using QPSK
+    carrier_signal = np.exp(2j * np.pi * center_freq * t)
+    rf_signal = carrier_signal * baseband
+    
+    return rf_signal
+    # Transmit the signal
+    sdr.tx(rf_signal, repeat=True)
+
+
+bit_map = {-1-1j: '00', -1+1j: '01', 1-1j: '10', 1+1j: '11'}
+bit_map_reverse = {value: key for key, value in bit_map.items()}
+
 
 """
 Function to modulate text to complex symbols
@@ -15,7 +49,12 @@ def qpsk_modulate_text(text):
     bits = [bit for byte in text_to_byte for bit in byte]
     two_bits_to_complex = np.array([bit_map_reverse[f'{bits[i]}{bits[i+1]}'] for i in range(0, len(bits), 2)])
     return two_bits_to_complex
+
     
+    fig, ax1 = plt.subplots()
+    ax1.plot(np.real(two_bits_to_complex), np.imag(two_bits_to_complex), '.')
+    plt.show()
+
 """
 Function to demodulate complex symbols to text
 
@@ -31,26 +70,3 @@ def qpsk_demodulate_symbols(complex_symbols):
 
     return chars
 
-char = "Hello"
-
-bit_map = {-1-1j: '00', -1+1j: '01', 1-1j: '10', 1+1j: '11'}
-bit_map_reverse = {value: key for key, value in bit_map.items()}
-
-
-
-
-frequency = 10 # Hz
-sample_rate = 1000 # (samples per second)
-T = 1 / sample_rate # time between samples
-duration = 1 # second
-t = np.arange(0, duration, T) # time vector 
-
-carrier = np.cos(2 * np.pi * frequency * t) # carrier signal
-
-fig, ax1 = plt.subplots()
-ax1.plot(t, carrier)
-plt.show()
-#
-#message_in_complex = qpsk_modulate_text(char)
-#
-#print(message_in_complex)
