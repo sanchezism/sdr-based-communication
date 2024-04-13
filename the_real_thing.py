@@ -25,23 +25,36 @@ def qpsk_modulate_text(text):
     two_bits_to_complex = np.array([bit_map_reverse[f'{bits[i]}{bits[i+1]}'] for i in range(0, len(bits), 2)])                                
     return two_bits_to_complex
 
+# QPSK bit mapping to get complex numbers
 bit_map = {-1-1j: '00', -1+1j: '01', 1-1j: '10', 1+1j: '11'}                                
 bit_map_reverse = {value: key for key, value in bit_map.items()}
 
+# Message to be transmitted
+chars = "ISMAEL SANCHEZ IS COOL"
+
+# Modulate the text
+symbols = qpsk_modulate_text(chars)
+
+# Configure a carrier wave
 f = 10 # cycles / sec
 Fs = 1000 # samples / sec also seen as Fs
-T = 1 # sec aslo seen as T
 Ts = 1 / Fs # sample interval also seen as Ts
+T = 1 # sec
 t = np.arange(0, T, Ts) # time vector
-chars = "I"
-symbols = qpsk_modulate_text(chars)
+
+
 samples_per_symbol = Fs / len(symbols)
 repeated_symbols = np.repeat(symbols, samples_per_symbol)
 theta = repeated_symbols # phase shift in radians
+
+if t.size > len(repeated_symbols):
+    padding = np.zeros(t.size - len(theta))
+    theta = np.concatenate((repeated_symbols, padding))
+
+print(samples_per_symbol)
+
+# Create a carrier wave with the modulation scheme
 carrier = np.sin(2 * np.pi * f * t + np.angle(theta)) 
-
-
-
 
 
 fig, ax1 = plt.subplots()
