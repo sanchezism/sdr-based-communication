@@ -49,60 +49,72 @@ def psk_modulation(bits, frequency, sample_rate, symbol_duration=None):
     
     # Create the carrier signal
     #carrier = np.sin(2 * np.pi * frequency * t + np.pi * np.repeat(bits, samples_per_symbol))
-    carrier = np.cos(np.repeat(bits, samples_per_symbol) * 2 * np.pi * frequency * t) # ASK
+    carrier = np.repeat(bits, samples_per_symbol) * np.cos(2 * np.pi * frequency * t) # ASK
     return carrier, t
 
-#char = 'Ismael Sanchez wants to say hi!'
-#fig, ax = plt.subplots()
-#carrier, t = psk_modulation(ascii_to_bits(char), 10, 100)
-#ax.plot(t, carrier)
-#plt.show()
+char = 'Is' 
 
-def main():
-    # Create a PlutoSDR object
-    sdr = adi.Pluto("ip:192.168.2.1")
+# plot the time domain signal
+fig, ax1 = plt.subplots()
+carrier, t = psk_modulation(ascii_to_bits(char), 5, 50)
+ax1.plot(t, carrier)
 
-    # Set the sample rate and frequency
-    sample_rate = 1e6
-    frequency = 915e6
-    bandwidth = 20e6
+# plot the frequency domain signal
 
-    # Configure the PlutoSDR
-    sdr.sample_rate = int(sample_rate)
-    sdr.tx_rf_bandwidth = int(bandwidth)
-    sdr.tx_lo = int(frequency)
-    sdr.tx_hardwaregain_chan0 = -20
-    start_time = time.time()
-    
-    while True:
-        receive_or_transmit = input("Do you want to transmit or receive? (t/r): ")
-        if receive_or_transmit == 't':
-            # Get the user input and convert it to a list of bits
-            user_input = input("user 1: ")
-            bits = ascii_to_bits(user_input)
-
-            # Perform PSK modulation
-            f = 100
-            Fs = 10000
-            modulated_signal, t = psk_modulation(bits, f, Fs)
-
-            # Transmit the modulated signal
-            modulated_signal *= 2**14
-            for i in range(100):
-                sdr.tx(modulated_signal)
-            
-            break
-        elif receive_or_transmit == 'r':
-            sdr.gain_control_mode_chan0 = 'manual'
-            sdr.rx_hardwaregain_chan0 = 70.0
-            sdr.rx_lo = int(frequency)
-            sdr.rx_rf_bandwidth = int(bandwidth)
-            sdr.rx_buffer_size = 10000
-
-            samples = sdr.rx()
-            print(samples[0:20])
+# Create the frequency vector
+f = np.fft.fftshift(np.fft.fftfreq(len(carrier), 1 / 50))
+fig, ax2 = plt.subplots()
+S = np.fft.fftshift(np.fft.fft(carrier))
+ax2.plot(f, np.real(S), '-')
 
 
+plt.show()
 
-if __name__ == "__main__":
-    main()
+#def main():
+#    # Create a PlutoSDR object
+#    sdr = adi.Pluto("ip:192.168.2.1")
+#
+#    # Set the sample rate and frequency
+#    sample_rate = 1e6
+#    frequency = 915e6
+#    bandwidth = 20e6
+#
+#    # Configure the PlutoSDR
+#    sdr.sample_rate = int(sample_rate)
+#    sdr.tx_rf_bandwidth = int(bandwidth)
+#    sdr.tx_lo = int(frequency)
+#    sdr.tx_hardwaregain_chan0 = -20
+#    start_time = time.time()
+#    
+#    while True:
+#        receive_or_transmit = input("Do you want to transmit or receive? (t/r): ")
+#        if receive_or_transmit == 't':
+#            # Get the user input and convert it to a list of bits
+#            user_input = input("user 1: ")
+#            bits = ascii_to_bits(user_input)
+#
+#            # Perform PSK modulation
+#            f = 100
+#            Fs = 10000
+#            modulated_signal, t = psk_modulation(bits, f, Fs)
+#
+#            # Transmit the modulated signal
+#            modulated_signal *= 2**14
+#            for i in range(100):
+#                sdr.tx(modulated_signal)
+#            
+#            break
+#        elif receive_or_transmit == 'r':
+#            sdr.gain_control_mode_chan0 = 'manual'
+#            sdr.rx_hardwaregain_chan0 = 70.0
+#            sdr.rx_lo = int(frequency)
+#            sdr.rx_rf_bandwidth = int(bandwidth)
+#            sdr.rx_buffer_size = 10000
+#
+#            samples = sdr.rx()
+#            print(samples[0:20])
+#
+#
+#
+#if __name__ == "__main__":
+#    main()
