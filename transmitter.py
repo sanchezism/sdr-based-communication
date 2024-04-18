@@ -52,24 +52,27 @@ def psk_modulation(bits, frequency, sample_rate, symbol_duration=None):
     carrier = np.repeat(bits, samples_per_symbol) * np.cos(2 * np.pi * frequency * t) # ASK
     return carrier, t
 
+# characters to send
 char = 'Is' 
+carrier, t = psk_modulation(ascii_to_bits(char), 5, 50)
+
+
+# Generate noise and add it to the signal
+std_dev = 0.1
+noise = np.random.normal(0, std_dev, len(carrier))
+signal_with_noise = carrier + noise
 
 # plot the time domain signal
 fig, ax1 = plt.subplots()
-carrier, t = psk_modulation(ascii_to_bits(char), 5, 50)
-ax1.plot(t, carrier)
+ax1.plot(t, carrier, '-')
 
 # plot the frequency domain signal
-
-# Create the frequency vector
 f = np.fft.fftshift(np.fft.fftfreq(len(carrier), 1 / 50))
 fig, ax2 = plt.subplots()
 S = np.fft.fftshift(np.fft.fft(carrier))
 ax2.plot(f, np.real(S), '-')
 
-
 plt.show()
-
 #def main():
 #    # Create a PlutoSDR object
 #    sdr = adi.Pluto("ip:192.168.2.1")
