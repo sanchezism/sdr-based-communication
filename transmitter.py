@@ -1,8 +1,8 @@
-#!/usr/bin/python3
+#/usr/bin/python3
 
 import numpy as np
 import matplotlib.pyplot as plt
-import adi
+#import adi
 import time
 
 def ascii_to_bits(ascii_string):
@@ -71,6 +71,9 @@ f = np.fft.fftshift(np.fft.fftfreq(len(carrier), 1 / 50))
 fig, ax2 = plt.subplots()
 S = np.fft.fftshift(np.fft.fft(carrier))
 ax2.plot(f, np.real(S), '-')
+
+#signal_with_noise = signal_with_noise.astype(np.complex64)
+#signal_with_noise.tofile('ask_in_noise.iq')
 
 plt.show()
 #def main():
