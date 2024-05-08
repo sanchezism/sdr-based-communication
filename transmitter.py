@@ -53,7 +53,7 @@ def psk_modulation(bits, frequency, sample_rate, symbol_duration=None):
     return carrier, t
 
 # characters to send
-char = 'Is' 
+char = "Hi there! This is your mom! LOL"
 carrier, t = psk_modulation(ascii_to_bits(char), 5, 50)
 
 
@@ -61,6 +61,8 @@ carrier, t = psk_modulation(ascii_to_bits(char), 5, 50)
 std_dev = 0.1
 noise = np.random.normal(0, std_dev, len(carrier))
 signal_with_noise = carrier + noise
+signal_with_noise = signal_with_noise.astype(np.complex64)
+signal_with_noise.tofile('signal_with_noise.iq')
 
 # plot the time domain signal
 fig, ax1 = plt.subplots()
