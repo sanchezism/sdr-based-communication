@@ -23,9 +23,11 @@ def ascii_to_bits(ascii_string):
 
     return bits
 
-def psk_modulation(bits, frequency, sample_rate, symbol_duration=None):
+
+#this is actually ASK modulation
+def ask_modulation(bits, frequency, sample_rate=None, symbol_rate=None):
     """
-    Perform PSK modulation on a list of bits.
+    Perform ASK modulation on a list of bits.
 
     Parameters:
     - bits (numpy array): the list of bits to modulate
@@ -37,12 +39,16 @@ def psk_modulation(bits, frequency, sample_rate, symbol_duration=None):
     - modulated_signal (numpy array): the modulated signal
     - t (numpy array): the time vector
     """
-    
-    if symbol_duration is None:
-        symbol_duration = 1 / 10 * frequency
+    if sample_rate is None:
+        sample_rate = frequency * 10
+    if symbol_rate is None:
+        symbol_rate = 1
 
+
+    #if symbol_duration is None:
+    #    symbol_duration = 1 / 10 * frequency # don't need
     # Calculate the number of samples per symbol
-    samples_per_symbol = int(sample_rate * symbol_duration)
+    samples_per_symbol = int(sample_rate / symbol_rate)
     
     # Create the time vector
     t = np.arange(0, len(bits) * samples_per_symbol) / sample_rate
@@ -53,8 +59,10 @@ def psk_modulation(bits, frequency, sample_rate, symbol_duration=None):
     return carrier, t
 
 # characters to send
-char = "Hi there! This is your mom! LOL"
-carrier, t = psk_modulation(ascii_to_bits(char), 5, 50)
+char = "It works with all frequencies!"
+frequency = 85
+sample_rate = 300 
+carrier, t = ask_modulation(ascii_to_bits(char), frequency, sample_rate)
 
 
 # Generate noise and add it to the signal
@@ -69,7 +77,7 @@ fig, ax1 = plt.subplots()
 ax1.plot(t, carrier, '-')
 
 # plot the frequency domain signal
-f = np.fft.fftshift(np.fft.fftfreq(len(carrier), 1 / 50))
+f = np.fft.fftshift(np.fft.fftfreq(len(carrier), 1 / sample_rate))
 fig, ax2 = plt.subplots()
 S = np.fft.fftshift(np.fft.fft(carrier))
 ax2.plot(f, np.real(S), '-')
@@ -101,7 +109,7 @@ plt.show()
 #            # Perform PSK modulation
 #            f = 100
 #            Fs = 10000
-#            modulated_signal, t = psk_modulation(bits, f, Fs)
+#            modulated_signal, t = ask_modulation(bits, f, Fs)
 #
 #            # Transmit the modulated signal
 #            modulated_signal *= 2**14
