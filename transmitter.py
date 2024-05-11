@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import pdb
 import numpy as np
 import matplotlib.pyplot as plt
 import adi
@@ -17,14 +18,14 @@ def ascii_to_bits(ascii_string):
     """
 
     bits = np.array([], dtype=int)
-
+    preamble = np.array([1, 1, 0, 0, 1, 1, 0, 0, 1, 1], dtype=int)
     for char in ascii_string:
         bits = np.append(bits, np.array([int(bit) for bit in format(ord(char), '08b')]))
-
+    
+    bits = np.concatenate((preamble, bits))
     return bits
 
 
-#this is actually ASK modulation
 def ask_modulation(bits, frequency, sample_rate=None, symbol_rate=None):
     """
     Perform ASK modulation on a list of bits.
@@ -59,17 +60,25 @@ def ask_modulation(bits, frequency, sample_rate=None, symbol_rate=None):
     return carrier, t
 
 # characters to send
-char = "It works with all frequencies!"
-frequency = 85
-sample_rate = 300 
-carrier, t = ask_modulation(ascii_to_bits(char), frequency, sample_rate)
+#pdb.set_trace()
+char = "Hello, Ismael! This is Bo"
+frequency = 200
+sample_rate = 500 
+symbol_rate = 100
+carrier, t = ask_modulation(ascii_to_bits(char), frequency, sample_rate, symbol_rate)
 
 
 # Generate noise and add it to the signal
 std_dev = 0.1
 noise = np.random.normal(0, std_dev, len(carrier))
 signal_with_noise = carrier + noise
+signal_with_noise = np.pad(signal_with_noise, (40, 0), 'constant', constant_values=(0,))
 signal_with_noise = signal_with_noise.astype(np.complex64)
+
+#pdb.set_trace()
+#for i in range(500):
+#    print(signal_with_noise[i].real, signal_with_noise[i].imag)
+
 signal_with_noise.tofile('signal_with_noise.iq')
 
 # plot the time domain signal
@@ -81,6 +90,9 @@ f = np.fft.fftshift(np.fft.fftfreq(len(carrier), 1 / sample_rate))
 fig, ax2 = plt.subplots()
 S = np.fft.fftshift(np.fft.fft(carrier))
 ax2.plot(f, np.real(S), '-')
+
+fig, ax3 = plt.subplots()
+ax3.plot(signal_with_noise, '-')
 
 plt.show()
 #def main():
