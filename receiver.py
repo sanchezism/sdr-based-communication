@@ -44,7 +44,7 @@ def correlation(signal, preamble):
 
     #if peak_value > threshold:
     #    print(f"Preamble detected at index {peak_index - len(preamble) + 1}")
-    
+    print(f"Peak index: {peak_index}") 
     return peak_index
     
 def signal_ask_demodulation(signal, frequency, sample_rate, symbol_rate):
@@ -119,26 +119,51 @@ def bits_to_string(bits):
 
     return string
 
+def get_protocol_information(signal):
+    """
+    Get the protocol information from a signal
+
+    Parameters:
+    signal (np.array): The signal to extract the protocol information from
+    
+    Returns:
+    msg_length (int): The length of the message
+    """
+
+    
 #pdb.set_trace()
+# Set up parameters
 signal = np.fromfile('signal_with_noise.iq', np.complex64)
 frequency = 200
 sample_rate = 500
 symbol_rate = 100
+
+# Calculation used to find the start of the message
 samples_per_symbol = sample_rate // symbol_rate
 
+# Generate the preamble signal for correlation
 preamble_bits = [1, 1, 0, 0, 1, 1, 0, 0, 1, 1]
 preamble_signal = preamble_to_signal(preamble_bits, frequency, sample_rate, symbol_rate)
 
-start_of_message = correlation(signal, preamble_signal) + (len(preamble_bits) * samples_per_symbol)
+# Find the index of where the message actually starts and
+# where the protocol information starts
+start_of_message = correlation(signal, preamble_signal) + ((len(preamble_bits) + 5) * samples_per_symbol)
+start_of_protocol_information = correlation(signal, preamble_signal) + (len(preamble_bits) * samples_per_symbol)
+
+# Find the length of the message from the protocol information
+protocol_information = signal[start_of_protocol_information:start_of_protocol_information + (5 * samples_per_symbol)]
+msg_length_in_binary = signal_ask_demodulation(protocol_information, frequency, sample_rate, symbol_rate)
+msg_length = int(''.join([str(b) for b in msg_length_in_binary]), 2)
+
 signal = signal[start_of_message:]
 
 bits = signal_ask_demodulation(signal, frequency, sample_rate, symbol_rate)
-message = bits_to_string(bits)
+message = bits_to_string(bits)[:msg_length]
 
-string_bits = ''.join([str(b) for b in bits])
+#string_bits = ''.join([str(b) for b in bits])
 #print(string_bits)
-print(message)
-
+print(f'msg_length: {msg_length}')
+print(f'message: {message}')
 
 
 #fig, ax1 = plt.subplots()
@@ -148,7 +173,7 @@ print(message)
 #fig, ax5 = plt.subplots()
 #fig, ax6 = plt.subplots()
 
-#ax1.plot(samples, "-*")
+#ax1.plot(corre, "-")
 #ax2.plot(magnitudes, "-*")
 #ax3.plot(bits, "-*")
 #ax4.plot(corre, "*")

@@ -1,10 +1,32 @@
-#/usr/bin/python3
+#!/usr/bin/python3
 
 import pdb
 import numpy as np
 import matplotlib.pyplot as plt
 #import adi
 import time
+
+def create_protocol(msg, preamble):
+    """
+    Creates a protocol with a preamble and information about a message.
+
+    Parameters:
+    msg (string): the message to send
+    preamble (np.array): the preamble to send
+
+    Returns:
+    protocol (np.array): the protocol to send in bits
+    """
+
+    msg_length = len(msg)
+    if msg_length < 0 or msg_length > 31:
+        raise ValueError("The message length must be between 0 and 31 characters.")
+
+    binary_length = np.array([int(bit) for bit in format(msg_length, '05b')])
+    protocol = np.concatenate((preamble, binary_length))
+
+    return protocol
+
 
 def ascii_to_bits(ascii_string):
     """
@@ -18,11 +40,9 @@ def ascii_to_bits(ascii_string):
     """
 
     bits = np.array([], dtype=int)
-    preamble = np.array([1, 1, 0, 0, 1, 1, 0, 0, 1, 1], dtype=int)
     for char in ascii_string:
         bits = np.append(bits, np.array([int(bit) for bit in format(ord(char), '08b')]))
     
-    bits = np.concatenate((preamble, bits))
     return bits
 
 
@@ -59,25 +79,27 @@ def ask_modulation(bits, frequency, sample_rate=None, symbol_rate=None):
     carrier = np.repeat(bits, samples_per_symbol) * np.cos(2 * np.pi * frequency * t) # ASK
     return carrier, t
 
-# characters to send
-#pdb.set_trace()
-char = "Hello, Ismael! This is Bo"
+# Create the message and adjust settings
+char = "Hello"
 frequency = 200
 sample_rate = 500 
 symbol_rate = 100
-carrier, t = ask_modulation(ascii_to_bits(char), frequency, sample_rate, symbol_rate)
+preamble = np.array([1, 1, 0, 0, 1, 1, 0, 0, 1, 1], dtype=int)
 
+# Create the protocol and add it to the message
+msg_protocol = create_protocol(char, preamble)
+msg_frame = np.concatenate((msg_protocol, ascii_to_bits(char)))
+
+# Perform ASK modulation
+carrier, t = ask_modulation(msg_frame, frequency, sample_rate, symbol_rate)
 
 # Generate noise and add it to the signal
 std_dev = 0.1
 noise = np.random.normal(0, std_dev, len(carrier))
 signal_with_noise = carrier + noise
-signal_with_noise = np.pad(signal_with_noise, (40, 0), 'constant', constant_values=(0,))
+pad_width = (50, 5000)
+signal_with_noise = np.pad(signal_with_noise, pad_width, 'constant', constant_values=10)
 signal_with_noise = signal_with_noise.astype(np.complex64)
-
-#pdb.set_trace()
-#for i in range(500):
-#    print(signal_with_noise[i].real, signal_with_noise[i].imag)
 
 signal_with_noise.tofile('signal_with_noise.iq')
 
